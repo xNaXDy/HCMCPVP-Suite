@@ -1,0 +1,94 @@
+version: '3.2'
+services:
+    hcmc-bungee:
+        image: hcmcpvp/bungee:legacy
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - "25565:25565"
+        expose:
+            - 9190
+        depends_on:
+            - hcmc-survival
+            - hcmc-dungeons
+            - hcmc-lobby
+        volumes:
+          - type: bind
+            source: ./bungee/config.yml
+            target: /server/config.yml
+    hcmc-dbhost:
+        build: ./db
+        restart: always
+        env_file:
+            - .env-mysql
+        expose:
+            - 3306
+    hcmc-survival:
+        image: hcmcpvp/survival:legacy
+        restart: always
+        depends_on:
+            - hcmc-dbhost
+        env_file:
+            - .env
+        expose:
+            - 25565
+        volumes:
+          - type: bind
+            source: ./ops.json
+            target: /server/ops.json
+          - ./survival/world:/server/world
+          - ./survival/world_the_end:/server/world_the_end
+          - ./survival/world_nether:/server/world_nether
+          - ./survival/plugins:/server/plugins
+          - ./survival/hcsurvival:/server/hcsurvival
+          - ./survival/hcplayers:/server/hcplayers
+          - ./survival/world_old:/server/world_old
+        environment:
+          - WAIT_HOSTS=hcmc-dbhost:3306
+          - WAIT_HOSTS_TIMEOUT=300
+          - WAIT_SLEEP_INTERVAL=30
+          - WAIT_HOST_CONNECT_TIMEOUT=30
+    hcmc-dungeons:
+        image: hcmcpvp/dungeons:legacy
+        restart: always
+        depends_on:
+            - hcmc-dbhost
+        env_file:
+            - .env
+        expose:
+          - 25565
+        volumes:
+          - type: bind
+            source: ./ops.json
+            target: /server/ops.json
+          - ./dungeons/dpublics:/server/dpublics
+          - ./dungeons/dworkspaces:/server/dworkspaces
+          - ./dungeons/dunstub:/server/dunstub
+          - ./dungeons/dplayers:/server/dplayers
+          - ./dungeons/plugins:/server/plugins
+        environment:
+          - WAIT_HOSTS=hcmc-dbhost:3306
+          - WAIT_HOSTS_TIMEOUT=300
+          - WAIT_SLEEP_INTERVAL=30
+          - WAIT_HOST_CONNECT_TIMEOUT=30
+    hcmc-lobby:
+        image: hcmcpvp/hub:legacy
+        restart: always
+        depends_on:
+            - hcmc-dbhost
+        env_file:
+            - .env
+        expose:
+          - 25565
+        volumes:
+          - type: bind
+            source: ./ops.json
+            target: /server/ops.json
+          - ./hub/world:/server/world
+          - ./hub/plugins:/server/plugins
+        environment:
+          - WAIT_HOSTS=hcmc-dbhost:3306
+          - WAIT_HOSTS_TIMEOUT=300
+          - WAIT_SLEEP_INTERVAL=30
+          - WAIT_HOST_CONNECT_TIMEOUT=30
